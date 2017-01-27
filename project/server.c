@@ -6,6 +6,10 @@
 // - Check the implementation by blocking the first stream for a while
 // - Implement the SCTP streaming feature using the original TCP/UDP send
 //   function
+// ---> Keyboard Interrupt machen, kann auf stream 1 gesendet werden, ansonsten
+// wird auf stream 2 immer text gesendet. signals nutzen?!
+// ausserdem auch fuer server den loop implementieren.
+//  
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +55,7 @@ int main() {
 
     // Initialize and bind socket (DGRAM: non-connection-mode socket)
     printf("Initializing socket.\n");
-    int s = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+    int s = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
     if (s < 0)
         perror("socket(): Error received.\n");
 
@@ -88,13 +92,10 @@ int main() {
         }
 
         else {
-            srinfo.sinfo_stream++;
-            if (srinfo.sinfo_stream >= NUM_STREAMS)
-                srinfo.sinfo_stream = 0;
-
-            printf("Received from %s:%u:\n%s\n\n",
+            printf("Received from %s:%u, stream no. %d:\n%s\n\n",
                    inet_ntoa(server_address.sin_addr),
-                   ntohs(server_address.sin_port), (char*) buffer);
+                   ntohs(server_address.sin_port), srinfo.sinfo_stream,
+                   (char*) buffer);
             printf("Client address: %s\n", inet_ntoa(client_address.sin_addr));
 
             sleep(2);
@@ -102,7 +103,7 @@ int main() {
             // Send buffer containing string to server
             strcpy(buffer_response, "Received the message.\n");
             printf("Buffer Response: %s\n", buffer_response); 
-            printf("Sending confirmation back to client.\n");
+            printf("Sending confirmation back to client.\n\n\n");
             int succ_send = sctp_sendmsg(s, (void*) buffer_response,
                     BUFFER_SIZE, (struct sockaddr*) &client_address,
                     sizeof client_address, 0, 0, 1, 10000, 0); 
