@@ -135,7 +135,6 @@ int main() {
             
             // close new socket in child process
             int succ_close = close(new_socket);
-            /*int succ_close = shutdown(new_socket, SHUT_RDWR);*/
             if (succ_close < 0)
                 printf("\nshutdown(): An error has occured");
 
