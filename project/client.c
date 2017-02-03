@@ -40,7 +40,9 @@ int main() {
     char buffer_response[BUFFER_SIZE];
 
     struct sctp_sndrcvinfo srinfo;
+    struct sctp_sndrcvinfo srinfo_rec;
     bzero(&srinfo, sizeof srinfo);
+    bzero(&srinfo_rec, sizeof srinfo_rec);
     int flags = 0;
 
     // Ask user to input string
@@ -87,8 +89,9 @@ int main() {
         server_rec_len = sizeof(server_rec_address);
         printf("Receiving response from server.\n");
         sctp_recvmsg(s, buffer_response, BUFFER_SIZE, (struct sockaddr*)
-                     &server_rec_address, &server_rec_len, &srinfo, &flags);
-        printf("Print out of data received from server: %255s \n", buffer_response);
+                     &server_rec_address, &server_rec_len, &srinfo_rec, &flags);
+        printf("Print out of data received from server on stream %d: %255s \n",
+               srinfo_rec.sinfo_stream, buffer_response);
     }
 
     close(s);

@@ -50,7 +50,10 @@ int main() {
     char buffer_response[BUFFER_SIZE];
 
     // Store recvmsg information
-    struct sctp_sndrcvinfo srinfo;
+    struct sctp_sndrcvinfo srinfo_cli;
+    struct sctp_sndrcvinfo srinfo_ser;
+    bzero(&srinfo_cli, sizeof srinfo_cli);
+    bzero(&srinfo_ser, sizeof srinfo_ser);
     int flags;
 
     // Initialize and bind socket (DGRAM: non-connection-mode socket)
@@ -79,6 +82,8 @@ int main() {
     if (succ_listen < 0)
         printf("listen(): Listen not successful.\n");
 
+    srinfo_ser.sinfo_stream = 0;
+
     printf("Entering while Loop.\n");
     while(1) {
         flags = 0;
@@ -86,7 +91,7 @@ int main() {
         // Wait for message from a client (blocking)
         client_addr_len = sizeof client_address;
         int recv_num_bytes = sctp_recvmsg(s, buffer, BUFFER_SIZE, (struct
-                sockaddr*) &client_address, &client_addr_len, &srinfo, &flags);
+                sockaddr*) &client_address, &client_addr_len, &srinfo_cli, &flags);
         if (recv_num_bytes < 0) {
             printf("recvmsg(): Transmission not successful.\n");
         }
@@ -94,10 +99,10 @@ int main() {
         else {
             printf("Received from %s:%u, stream no. %d:\n%s\n\n",
                    inet_ntoa(server_address.sin_addr),
-                   ntohs(server_address.sin_port), srinfo.sinfo_stream,
+                   ntohs(server_address.sin_port), srinfo_cli.sinfo_stream,
                    (char*) buffer);
             printf("Client address: %s\n", inet_ntoa(client_address.sin_addr));
-
+            
             sleep(2);
 
             // Send buffer containing string to server
@@ -106,12 +111,14 @@ int main() {
             printf("Sending confirmation back to client.\n\n\n");
             int succ_send = sctp_sendmsg(s, (void*) buffer_response,
                     BUFFER_SIZE, (struct sockaddr*) &client_address,
-                    sizeof client_address, 0, 0, 1, 10000, 0); 
+                    sizeof client_address, 0, 0, srinfo_ser.sinfo_stream, 10000, 0); 
             if (succ_send < 0)
                 printf("sctp_sendmsg(): Transmission to client not successful.\n");
-
+            
             if (0 == strcmp(buffer, "quit"))
                 break;
+
+            srinfo_ser.sinfo_stream++;
         }
     }
 
