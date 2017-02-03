@@ -39,7 +39,8 @@ int main() {
 
     // Bind socket.
     printf("Binding socket.\n");
-    int succ_bind = bind(s, (struct sockaddr*) &server_address, sizeof server_address);
+    int succ_bind = bind(s, (struct sockaddr*) &server_address, sizeof
+                         server_address);
     if (succ_bind == -1)
         perror("Bind not successful.\n");
 
