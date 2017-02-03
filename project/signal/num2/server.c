@@ -1,6 +1,7 @@
 // ECHO SERVER USING UDP / SIGNALS
 
 #include <stdio.h> 
+#include <stdlib.h> 
 #include <string.h> 
 
 #include <sys/types.h> 
@@ -13,12 +14,54 @@
 #include <signal.h>
 
 
-void io_handler(int);
-
-
 // Buffer to write received string to
 unsigned int BUFFER_SIZE = 256;
 int s = 0;
+
+
+void io_handler(int sig) {
+    // Create sockaddr to store client properties later when receiving from client 
+    struct sockaddr client_address;
+    socklen_t client_addr_len = sizeof client_address;
+    int num_bytes_received;
+    
+    int stream = 0;
+
+    int str_size = BUFFER_SIZE;     
+    char buffer[BUFFER_SIZE];       
+    
+    // Receive data from client and store client address.
+    num_bytes_received = new_recvfrom(s, buffer, str_size, 0, &client_address,
+            &client_addr_len, &stream);
+    if (num_bytes_received == -1)
+        perror("recvfrom(): An error occured.\n");
+
+    // Print message received from client.
+    printf("\nData sent from client on stream no. %d:\n%s \n", stream, buffer);
+
+    // Send received string back to the client
+    /*int succ_sendto = sendto(s, buffer, strlen(buffer)+1, 0, &client_address, */
+                             /*client_addr_len);  */
+    /*if (succ_sendto == -1)*/
+        /*perror("sendto(): An error occured.\n");*/
+
+    return;
+}
+
+int new_recvfrom(int s, void *real_buf, size_t len, int flags, struct sockaddr
+        *from, socklen_t *fromlen, int* stream) {
+    char buf[BUFFER_SIZE];
+
+    int num_bytes_received = recvfrom(s, buf, len, flags, from, fromlen);
+    char str_stream[2];
+    strncpy(str_stream, buf, 1);
+    str_stream[1] = '\0';  // null termination
+    *stream = atoi(str_stream);
+    
+    strcpy(real_buf, buf+1);
+
+    return num_bytes_received;
+}
 
 
 int main() {
@@ -62,31 +105,3 @@ int main() {
     return 0;
 }
     
-
-void io_handler(int sig) {
-    // Create sockaddr to store client properties later when receiving from client 
-    struct sockaddr client_address;
-    socklen_t client_addr_len = sizeof client_address;
-    int num_bytes_received;
-
-    int str_size = BUFFER_SIZE;     
-    char buffer[BUFFER_SIZE];       
-    
-    // Receive data from client and store client address.
-    num_bytes_received = recvfrom(s, buffer, str_size, 0, &client_address,
-                                  &client_addr_len);
-    if (num_bytes_received == -1)
-        perror("recvfrom(): An error occured.\n");
-
-    // Print message received from client.
-    printf("\nData sent from client:\n%s \n", buffer);
-
-    // Send received string back to the client
-    int succ_sendto = sendto(s, buffer, strlen(buffer)+1, 0, &client_address, 
-                             client_addr_len);  
-    if (succ_sendto == -1)
-        perror("sendto(): An error occured.\n");
-
-    return;
-}
-
