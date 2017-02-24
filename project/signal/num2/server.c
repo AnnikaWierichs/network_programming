@@ -15,8 +15,9 @@
 
 
 // Buffer to write received string to
-unsigned int BUFFER_SIZE = 256;
+unsigned int BUFFER_SIZE = 20000;
 int s = 0;
+int F_COUNTER = 1;
 
 
 void io_handler(int sig) {
@@ -27,14 +28,27 @@ void io_handler(int sig) {
     
     int stream = 0;
 
-    int str_size = BUFFER_SIZE;     
     char buffer[BUFFER_SIZE];       
     
     // Receive data from client and store client address.
-    num_bytes_received = new_recvfrom(s, buffer, str_size, 0, &client_address,
+    num_bytes_received = new_recvfrom(s, buffer, BUFFER_SIZE, 0, &client_address,
             &client_addr_len, &stream);
     if (num_bytes_received == -1)
         perror("recvfrom(): An error occured.\n");
+
+    if (stream == 2) {
+        char new_file_name[] = "new_dog_";
+        char str_new_file_num[2];
+        sprintf(str_new_file_num, "%d", F_COUNTER);
+        strcat(new_file_name, str_new_file_num);
+        F_COUNTER++;
+        FILE *fp;
+        fp = fopen(new_file_name, "w+");
+        int succ_fwrite = fwrite(buffer, 1, sizeof(buffer), fp);
+        if (succ_fwrite <= 0)
+            perror("Fwrite not successful.\n");
+        fclose(fp);
+    }
 
     // Print message received from client.
     printf("\nData sent from client on stream no. %d:\n%s \n", stream, buffer);
@@ -104,4 +118,3 @@ int main() {
 
     return 0;
 }
-    
